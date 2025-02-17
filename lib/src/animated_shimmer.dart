@@ -68,7 +68,7 @@ class AnimatedShimmer extends StatefulWidget {
 class _AnimatedShimmerState extends State<AnimatedShimmer>
     with SingleTickerProviderStateMixin {
   // AnimationController for starting and driving the animation
-  late AnimationController _animationController;
+  AnimationController? _animationController;
   // Animation which will hold the ColorTween values
   late Animation _colorAnimation;
 
@@ -84,38 +84,42 @@ class _AnimatedShimmerState extends State<AnimatedShimmer>
         vsync: this, duration: const Duration(milliseconds: 600));
     // ColorTween Animation
     _colorAnimation = ColorTween(begin: widget.startColor, end: widget.endColor)
-        .animate(_animationController);
+        .animate(_animationController!);
 
     // Trigger the animation only after build is rendered
-    WidgetsBinding.instance?.addPostFrameCallback((timeStamp) {
+    WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
       // Check if any delay is requested
       if (widget.delayInMilliSeconds.inMilliseconds == 0) {
-        _animationController.forward();
+        _animationController?.forward();
       } else {
         Future.delayed(widget.delayInMilliSeconds, () {
           // start the animation
-          _animationController.forward();
+          _animationController?.forward();
         });
       }
     });
 
     // Adding listener to the AnimationController so that
     // we can put it in a loop based on it's status
-    _animationController.addStatusListener((status) {
+    _animationController!.addStatusListener((status) {
       if (status == AnimationStatus.completed) {
         // Reverse the animation if it's completed
-        _animationController.reverse();
+        _animationController?.reverse();
       } else if (status == AnimationStatus.dismissed) {
         // Restart the animation if it's dismissed
-        _animationController.forward();
+        _animationController?.forward();
       }
     });
   }
 
   @override
   Widget build(BuildContext context) {
+    if (_animationController == null) {
+      return Container();
+    }
+
     return AnimatedBuilder(
-      animation: _animationController,
+      animation: _animationController!,
       builder: (BuildContext context, Widget? child) {
         return Container(
           width: widget.width,
@@ -132,7 +136,10 @@ class _AnimatedShimmerState extends State<AnimatedShimmer>
   @override
   void dispose() {
     // Dispose the AnimationController when the widget is disposed
-    _animationController.dispose();
+    if (_animationController != null) {
+      _animationController!.dispose();
+      _animationController = null;
+    }
     super.dispose();
   }
 }
